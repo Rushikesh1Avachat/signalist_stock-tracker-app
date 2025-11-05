@@ -1,8 +1,8 @@
-export default function SearchCommand({ renderAs = 'button', label = 'Add stock', initialStocks }: SearchCommandProps) {
+import React from 'react'
 
+const SearchCommand = () => {
     return (
-<div>
-
-</div>
+        <div>Search</div>
     )
 }
+export default SearchCommand

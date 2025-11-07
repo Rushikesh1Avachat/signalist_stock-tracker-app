@@ -7,6 +7,12 @@ import { getNews } from "@/lib/actions/finnhub.actions";
 
 
 import { getFormattedTodayDate } from "@/lib/utils";
+export type UserForNewsEmail = {
+    id: string;
+    email: string;
+    name: string;
+    // ... other required fields
+};
 
 export const sendSignUpEmail = inngest.createFunction(
 
@@ -62,9 +68,9 @@ export const sendDailyNewsSummary = inngest.createFunction(
 
         // Step #2: For each user, get watchlist symbols -> fetch news (fallback to general)
         const results = await step.run('fetch-user-news', async () => {
-            //@ts-ignore
+
             const perUser: Array<{ user: UserForNewsEmail; articles: MarketNewsArticle[] }> = [];
-            //@ts-ignore
+
 
             for (const user of users as UserForNewsEmail[] ) {
                 try {
@@ -77,7 +83,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
                         articles = await getNews();
                         articles = (articles || []).slice(0, 6);
                     }
-                    //@ts-ignore
+
                     perUser.push({ user, articles });
                 } catch (e) {
                     console.error('daily-news: error preparing user news', user.email, e);
@@ -93,7 +99,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
         for (const { user, articles } of results) {
             try {
                 const prompt = NEWS_SUMMARY_EMAIL_PROMPT.replace('{{newsData}}', JSON.stringify(articles, null, 2));
-                //@ts-ignore
+
                 const response = await step.ai.infer(`summarize-news-${user.email}`, {
                     model: step.ai.models.gemini({ model: 'gemini-2.5-flash-lite' }),
                     body: {
@@ -103,12 +109,15 @@ export const sendDailyNewsSummary = inngest.createFunction(
 
                 const part = response.candidates?.[0]?.content?.parts?.[0];
                 const newsContent = (part && 'text' in part ? part.text : null) || 'No market news.'
-                //@ts-ignore
-                userNewsSummaries.push({ user, newsContent });
+
+                userNewsSummaries.push({
+                    user: user as UserForNewsEmail,
+                    newsContent,
+                });
             } catch (e) {
-                //@ts-ignore
+
                 console.error('Failed to summarize news for : ', user.email);
-                //@ts-ignore
+
                 userNewsSummaries.push({ user, newsContent: null });
             }
         }

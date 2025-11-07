@@ -152,17 +152,20 @@ declare global {
         alertData: Alert[] | undefined;
     };
 
-    type MarketNewsArticle = {
-        id: number;
+   type MarketNewsArticle = {
+        id?: string | number;
         headline: string;
         summary: string;
-        source: string;
         url: string;
-        datetime: number;
-        category: string;
-        related: string;
         image?: string;
-    };
+        datetime?: number;
+        source?: string;
+        category?: string;
+        symbol?: string;
+        company_name?: string;
+        performance?: string;
+    }
+
 
     type WatchlistNewsProps = {
         news?: MarketNewsArticle[];

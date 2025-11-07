@@ -7,6 +7,12 @@ import { getNews } from "@/lib/actions/finnhub.actions";
 
 
 import { getFormattedTodayDate } from "@/lib/utils";
+export type UserForNewsEmail = {
+    id: string;
+    email: string;
+    name: string;
+    // ... other required fields
+};
 
 export const sendSignUpEmail = inngest.createFunction(
 
@@ -62,8 +68,11 @@ export const sendDailyNewsSummary = inngest.createFunction(
 
         // Step #2: For each user, get watchlist symbols -> fetch news (fallback to general)
         const results = await step.run('fetch-user-news', async () => {
-            const perUser: Array<{ user: User; articles: MarketNewsArticle[] }> = [];
-            for (const user of users ) {
+
+            const perUser: Array<{ user: UserForNewsEmail; articles: MarketNewsArticle[] }> = [];
+
+
+            for (const user of users as UserForNewsEmail[] ) {
                 try {
                     const symbols = await getWatchlistSymbolsByEmail(user.email);
                     let articles = await getNews(symbols);
@@ -74,7 +83,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
                         articles = await getNews();
                         articles = (articles || []).slice(0, 6);
                     }
-                    //@ts-ignore
+
                     perUser.push({ user, articles });
                 } catch (e) {
                     console.error('daily-news: error preparing user news', user.email, e);
@@ -101,9 +110,14 @@ export const sendDailyNewsSummary = inngest.createFunction(
                 const part = response.candidates?.[0]?.content?.parts?.[0];
                 const newsContent = (part && 'text' in part ? part.text : null) || 'No market news.'
 
-                userNewsSummaries.push({ user, newsContent });
+                userNewsSummaries.push({
+                    user: user as UserForNewsEmail,
+                    newsContent,
+                });
             } catch (e) {
+
                 console.error('Failed to summarize news for : ', user.email);
+
                 userNewsSummaries.push({ user, newsContent: null });
             }
         }
